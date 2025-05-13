@@ -5,6 +5,37 @@ BOARD_SIZE = 19
 def create_board():
     return [['.' for _ in range(BOARD_SIZE)] for _ in range(BOARD_SIZE)]
 
+def read_board_from_file(filename):
+    try:
+        with open(filename, "r") as f:
+            lines = f.read().splitlines()
+    except FileNotFoundError:
+        print(f"Файл {filename} не знайдено.")
+        return None
+
+    if len(lines) != BOARD_SIZE:
+        print(f"Неправильна кількість рядків: очікується {BOARD_SIZE}, знайдено {len(lines)}.")
+        return None
+
+    board = []
+    for idx, line in enumerate(lines):
+        parts = line.strip().split()
+        if len(parts) != BOARD_SIZE:
+            print(f"Рядок {idx + 1} має {len(parts)} елементів, а очікується {BOARD_SIZE}.")
+            return None
+        try:
+            row = [int(x) for x in parts]
+        except ValueError:
+            print(f"Рядок {idx + 1} містить нечислові значення.")
+            return None
+        for val in row:
+            if val not in (0, 1, 2):
+                print(f"Неприпустиме значення {val} в рядку {idx + 1}. Допустимі тільки 0, 1, 2.")
+                return None
+        board.append(['.' if x == 0 else 'X' if x == 1 else 'O' for x in row])
+
+    return board
+
 def print_board(board):
     print('  ' + ' '.join([chr(ord('A') + i) for i in range(BOARD_SIZE)]))
     for idx, row in enumerate(board):
@@ -47,7 +78,10 @@ def parse_input(user_input):
     return None
 
 def main():
-    board = create_board()
+    board = read_board_from_file("input.txt")
+    if board is None:
+        return  # Вихід, якщо помилка в input.txt
+
     current_player = 'X'
     while True:
         print_board(board)
