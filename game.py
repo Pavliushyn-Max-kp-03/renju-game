@@ -2,104 +2,111 @@ import random
 
 BOARD_SIZE = 19
 
-def create_board():
-    return [['.' for _ in range(BOARD_SIZE)] for _ in range(BOARD_SIZE)]
+DIRECTIONS = [  
+    (0, 1),  
+    (1, 0),   
+    (1, 1),   
+    (-1, 1),  
+]
 
-def read_board_from_file(filename):
+def read_boards_from_file(filename):
     try:
         with open(filename, "r") as f:
-            lines = f.read().splitlines()
+            lines = [line.strip() for line in f if line.strip()]
     except FileNotFoundError:
         print(f"Файл {filename} не знайдено.")
-        return None
+        return []
 
-    if len(lines) != BOARD_SIZE:
-        print(f"Неправильна кількість рядків: очікується {BOARD_SIZE}, знайдено {len(lines)}.")
-        return None
+    if not lines:
+        print("Файл порожній.")
+        return []
 
-    board = []
-    for idx, line in enumerate(lines):
-        parts = line.strip().split()
-        if len(parts) != BOARD_SIZE:
-            print(f"Рядок {idx + 1} має {len(parts)} елементів, а очікується {BOARD_SIZE}.")
-            return None
-        try:
-            row = [int(x) for x in parts]
-        except ValueError:
-            print(f"Рядок {idx + 1} містить нечислові значення.")
-            return None
-        for val in row:
-            if val not in (0, 1, 2):
-                print(f"Неприпустиме значення {val} в рядку {idx + 1}. Допустимі тільки 0, 1, 2.")
-                return None
-        board.append(['.' if x == 0 else 'X' if x == 1 else 'O' for x in row])
-
-    return board
-
-def print_board(board):
-    print('  ' + ' '.join([chr(ord('A') + i) for i in range(BOARD_SIZE)]))
-    for idx, row in enumerate(board):
-        print(f"{idx+1:2} {' '.join(row)}")
-
-def is_valid_move(board, x, y):
-    return 0 <= x < BOARD_SIZE and 0 <= y < BOARD_SIZE and board[x][y] == '.'
-
-def place_move(board, x, y, player):
-    board[x][y] = player
-
-def check_win(board, x, y, player):
-    directions = [ (1,0), (0,1), (1,1), (1,-1) ]
-    for dx, dy in directions:
-        count = 1
-        for dir in [1, -1]:
-            nx, ny = x, y
-            while True:
-                nx += dx * dir
-                ny += dy * dir
-                if 0 <= nx < BOARD_SIZE and 0 <= ny < BOARD_SIZE and board[nx][ny] == player:
-                    count += 1
-                else:
-                    break
-        if count >= 5:
-            return True
-    return False
-
-def parse_input(user_input):
-    user_input = user_input.strip().upper()
-    if len(user_input) < 2:
-        return None
-    col = ord(user_input[0]) - ord('A')
     try:
-        row = int(user_input[1:]) - 1
+        num_tests = int(lines[0])
     except ValueError:
-        return None
-    if 0 <= row < BOARD_SIZE and 0 <= col < BOARD_SIZE:
-        return row, col
-    return None
+        print("Перша стрічка повинна містити кількість тестів.")
+        return []
+
+    lines = lines[1:]
+
+    if len(lines) < num_tests * BOARD_SIZE:
+        print("Недостатньо рядків для всіх тестів.")
+        return []
+
+    boards = []
+    for i in range(num_tests):
+        start = i * BOARD_SIZE
+        end = start + BOARD_SIZE
+        board_lines = lines[start:end]
+
+        if len(board_lines) != BOARD_SIZE:
+            print(f"Тест #{i+1}: неправильна кількість рядків.")
+            continue
+
+        board = []
+        for idx, line in enumerate(board_lines):
+            parts = line.split()
+            if len(parts) != BOARD_SIZE:
+                print(f"Тест #{i+1}, рядок {idx+1}: неправильна кількість чисел.")
+                break
+            try:
+                row = [int(x) for x in parts]
+                for val in row:
+                    if val not in (0, 1, 2):
+                        raise ValueError
+            except ValueError:
+                print(f"Тест #{i+1}, рядок {idx+1}: недопустимі значення.")
+                break
+            board.append(row)
+        else:
+            boards.append(board)
+
+    return boards
+
+def find_winner(board):
+    for x in range(BOARD_SIZE):
+        for y in range(BOARD_SIZE):
+            player = board[x][y]
+            if player == 0:
+                continue
+            for dx, dy in DIRECTIONS:
+                if is_winning_sequence(board, x, y, dx, dy, player):
+                    return player, x + 1, y + 1  # 1-based індексація
+    return 0, None, None
+
+def is_winning_sequence(board, x, y, dx, dy, player):
+    stones = [(x, y)]
+    for i in range(1, 5):
+        nx = x + dx * i
+        ny = y + dy * i
+        if not (0 <= nx < BOARD_SIZE and 0 <= ny < BOARD_SIZE):
+            return False
+        if board[nx][ny] != player:
+            return False
+        stones.append((nx, ny))
+
+    # Перевірка на "більше ніж 5" каменів
+    nx1 = x - dx
+    ny1 = y - dy
+    if 0 <= nx1 < BOARD_SIZE and 0 <= ny1 < BOARD_SIZE:
+        if board[nx1][ny1] == player:
+            return False
+
+    nx2 = x + dx * 5
+    ny2 = y + dy * 5
+    if 0 <= nx2 < BOARD_SIZE and 0 <= ny2 < BOARD_SIZE:
+        if board[nx2][ny2] == player:
+            return False
+
+    return True
 
 def main():
-    board = read_board_from_file("input.txt")
-    if board is None:
-        return  # Вихід, якщо помилка в input.txt
-
-    current_player = 'X'
-    while True:
-        print_board(board)
-        move = input(f"Player {current_player}, enter your move (e.g., A1): ")
-        parsed = parse_input(move)
-        if not parsed:
-            print("Invalid input. Try again.")
-            continue
-        x, y = parsed
-        if not is_valid_move(board, x, y):
-            print("Invalid move. Try again.")
-            continue
-        place_move(board, x, y, current_player)
-        if check_win(board, x, y, current_player):
-            print_board(board)
-            print(f"Player {current_player} wins!")
-            break
-        current_player = 'O' if current_player == 'X' else 'X'
+    boards = read_boards_from_file("input.txt")
+    for i, board in enumerate(boards):
+        winner, row, col = find_winner(board)
+        print(winner)
+        if winner != 0:
+            print(row, col)
 
 if __name__ == "__main__":
     main()
