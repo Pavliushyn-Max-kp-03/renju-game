@@ -10,6 +10,9 @@ DIRECTIONS = [
     (-1, 1),  
 ]
 
+def in_bounds(x, y):
+    return 0 <= x < BOARD_SIZE and 0 <= y < BOARD_SIZE
+
 def read_boards_from_file(filename):
     try:
         with open(filename, "r") as f:
@@ -80,7 +83,7 @@ def is_winning_sequence(board, x, y, dx, dy, player):
     for i in range(1, WIN_LENGTH):
         nx = x + dx * i
         ny = y + dy * i
-        if not (0 <= nx < BOARD_SIZE and 0 <= ny < BOARD_SIZE):
+        if not in_bounds(nx, ny):
             return False
         if board[nx][ny] != player:
             return False
@@ -89,13 +92,13 @@ def is_winning_sequence(board, x, y, dx, dy, player):
     
     nx1 = x - dx
     ny1 = y - dy
-    if 0 <= nx1 < BOARD_SIZE and 0 <= ny1 < BOARD_SIZE:
+    if in_bounds(nx1, ny1):
         if board[nx1][ny1] == player:
             return False
 
     nx2 = x + dx * WIN_LENGTH
     ny2 = y + dy * WIN_LENGTH
-    if 0 <= nx2 < BOARD_SIZE and 0 <= ny2 < BOARD_SIZE:
+    if in_bounds(nx2, ny2):
         if board[nx2][ny2] == player:
             return False
 
