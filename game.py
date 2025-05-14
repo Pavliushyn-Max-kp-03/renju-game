@@ -1,6 +1,7 @@
 import random
 
 BOARD_SIZE = 19
+WIN_LENGTH = 5
 
 DIRECTIONS = [  
     (0, 1),  
@@ -76,7 +77,7 @@ def find_winner(board):
 
 def is_winning_sequence(board, x, y, dx, dy, player):
     stones = [(x, y)]
-    for i in range(1, 5):
+    for i in range(1, WIN_LENGTH):
         nx = x + dx * i
         ny = y + dy * i
         if not (0 <= nx < BOARD_SIZE and 0 <= ny < BOARD_SIZE):
@@ -85,15 +86,15 @@ def is_winning_sequence(board, x, y, dx, dy, player):
             return False
         stones.append((nx, ny))
 
-    # Перевірка на "більше ніж 5" каменів
+    
     nx1 = x - dx
     ny1 = y - dy
     if 0 <= nx1 < BOARD_SIZE and 0 <= ny1 < BOARD_SIZE:
         if board[nx1][ny1] == player:
             return False
 
-    nx2 = x + dx * 5
-    ny2 = y + dy * 5
+    nx2 = x + dx * WIN_LENGTH
+    ny2 = y + dy * WIN_LENGTH
     if 0 <= nx2 < BOARD_SIZE and 0 <= ny2 < BOARD_SIZE:
         if board[nx2][ny2] == player:
             return False
